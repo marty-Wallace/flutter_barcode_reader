@@ -19,28 +19,49 @@ enum BarcodeType {
   PDF_417,
 }
 
+enum BarcodeViewOrientation { DEFAULT, PORTRAIT, LANDSCAPE }
+
 class BarcodeScanner {
   static const CameraAccessDenied = 'PERMISSION_NOT_GRANTED';
   static const MethodChannel _channel =
       const MethodChannel('com.apptreesoftware.barcode_scan');
 
-  static Future<String> scan({List<BarcodeType> types}) async =>
-      await _channel.invokeMethod(
-          'scan', <String, String>{"formats": _barcodeListToStringArg(types)});
+  static Future<String> scan(
+      {List<BarcodeType> types,
+      BarcodeViewOrientation orientation,
+      double viewWidthOffsetRatio,
+      double viewHeightOffsetRatio}) async {
+
+    if (!Platform.isAndroid) {
+
+      return await _channel.invokeMethod('scan');
+    }
+
+    Map<String, dynamic> args = {
+      "formats": _barcodeListToStringArg(types),
+      "orientation": _fixEnumToString((orientation ?? BarcodeViewOrientation.DEFAULT).toString()),
+    };
+
+    if(viewWidthOffsetRatio != null && viewHeightOffsetRatio != null) {
+      args.addAll({
+        "view_width_offset_ratio": viewWidthOffsetRatio,
+        "view_height_offset_ratio": viewHeightOffsetRatio,
+      });
+    }
+
+    return await _channel.invokeMethod('scan', args);
+  }
 
   static String _barcodeListToStringArg(List<BarcodeType> types) {
-    if(Platform.isIOS && types != null) {
-      throw new UnimplementedError("BarcodeType specification is not implemented yet for IOS");
-    }
     return types
-            ?.map((type) => _barcodeTypeToString(type))
+            ?.map((type) => _fixEnumToString(type.toString()))
             ?.toList()
             ?.join(' ') ??
         '';
   }
 
-  static String _barcodeTypeToString(BarcodeType type) {
+  static String _fixEnumToString(String toString) {
     // Remove the Enum name and . from the toString()
-    return type.toString().substring(type.toString().indexOf('.') + 1);
+    return toString.substring(toString.indexOf('.') + 1);
   }
 }

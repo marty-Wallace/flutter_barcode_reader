@@ -2,41 +2,73 @@ package com.apptreesoftware.barcodescan
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import android.util.DisplayMetrics
 import android.view.Menu
 import android.view.MenuItem
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.Result
+import me.dm7.barcodescanner.core.IViewFinder
+import me.dm7.barcodescanner.core.R
+import me.dm7.barcodescanner.core.ViewFinderView
 import me.dm7.barcodescanner.zxing.ZXingScannerView
-import java.util.stream.Collectors.toList
 
 
 class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
 
-    lateinit var scannerView: me.dm7.barcodescanner.zxing.ZXingScannerView
+    private lateinit var scannerView: me.dm7.barcodescanner.zxing.ZXingScannerView
 
     companion object {
-        val REQUEST_TAKE_PHOTO_CAMERA_PERMISSION = 100
-        val TOGGLE_FLASH = 200
+        const val REQUEST_TAKE_PHOTO_CAMERA_PERMISSION = 100
+        const val TOGGLE_FLASH = 200
 
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         title = ""
-
         val formats = intent.getStringExtra("formats")
-        val types = this._barcodeStringToEnums(formats)
-        scannerView = ZXingScannerView(this)
+        val orientation =  intent.getStringExtra("orientation")
+        if(orientation != "PORTRAIT") {
+            this.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+        val widthOffset = intent.getDoubleExtra("width_offset_ratio", .15)
+        val heightOffset = intent.getDoubleExtra("height_offset_ratio", .15)
+        val types = BarcodeFormatConverter.stringsToEnum(formats)
+
+        val metrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(metrics)
+        val heightPx = metrics.heightPixels
+        val widthPx = metrics.widthPixels
+
+        scannerView = object : ZXingScannerView(this) {
+            override fun createViewFinderView(context: Context): IViewFinder {
+                return CustomViewFinderView(context, widthPx, heightPx, widthOffset, heightOffset).apply {
+
+                    setBorderColor(ContextCompat.getColor(context, R.color.viewfinder_border))
+                    setLaserColor(ContextCompat.getColor(context, R.color.viewfinder_laser))
+                    setLaserEnabled(true)
+                    setBorderStrokeWidth(resources.getInteger(R.integer.viewfinder_border_width))
+                    setBorderLineLength(resources.getInteger(R.integer.viewfinder_border_length))
+                    setMaskColor(ContextCompat.getColor(context, R.color.viewfinder_mask))
+                    setBorderCornerRounded(false)
+                    setBorderCornerRadius(0)
+                    setSquareViewFinder(false)
+                    setViewFinderOffset(0)
+                }
+            }
+        }
 
         scannerView.formats.removeAll(ZXingScannerView.ALL_FORMATS)
         scannerView.setFormats(types)
-
         scannerView.setAutoFocus(true)
+        scannerView.setBorderLineLength(20)
+        scannerView.setSquareViewFinder(false)
         setContentView(scannerView)
     }
 
@@ -117,7 +149,11 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
         }
     }
 
-    fun _barcodeStringToEnums(formats : String) : MutableList<BarcodeFormat> {
+}
+
+object BarcodeFormatConverter {
+
+    fun stringsToEnum(formats : String) : MutableList<BarcodeFormat> {
         if (formats == "") {
             return ZXingScannerView.ALL_FORMATS
         }
@@ -151,17 +187,24 @@ object PermissionUtil {
      * @see Activity.onRequestPermissionsResult
      */
     fun verifyPermissions(grantResults: IntArray): Boolean {
-        // At least one result must be checked.
-        if (grantResults.size < 1) {
-            return false
-        }
+        return grantResults.isNotEmpty() &&
+                grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+    }
+}
 
-        // Verify that each required permission has been granted, otherwise return false.
-        for (result in grantResults) {
-            if (result != PackageManager.PERMISSION_GRANTED) {
-                return false
-            }
+class CustomViewFinderView(context: Context, private val widthPx : Int, private val heightPx : Int,
+                           private val widthOffsetRatio : Double, private val heightOffsetRatio : Double) : ViewFinderView(context) {
+
+    constructor(context: Context) : this(context, 0, 0, 0.15, 0.15)
+
+    override fun updateFramingRect() {
+
+        super.updateFramingRect()
+        if(widthPx != 0 && heightPx != 0) {
+            val widthOffset = (widthPx * widthOffsetRatio).toInt()
+            val heightOffset = (heightPx * heightOffsetRatio).toInt()
+            val originalRect = super.getFramingRect()
+            originalRect.set(widthOffset, heightOffset, widthPx -  widthOffset, heightPx - heightOffset)
         }
-        return true
     }
 }
