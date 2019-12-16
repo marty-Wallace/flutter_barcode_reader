@@ -23,6 +23,7 @@ enum BarcodeViewOrientation { DEFAULT, PORTRAIT, LANDSCAPE }
 
 class BarcodeScanner {
   static const CameraAccessDenied = 'PERMISSION_NOT_GRANTED';
+  static const UserCanceled = 'USER_CANCELED';
   static const MethodChannel _channel =
       const MethodChannel('com.apptreesoftware.barcode_scan');
 

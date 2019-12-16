@@ -6,8 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import android.util.DisplayMetrics
 import android.view.Menu
 import android.view.MenuItem
@@ -69,6 +69,8 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
         scannerView.setAutoFocus(true)
         scannerView.setBorderLineLength(20)
         scannerView.setSquareViewFinder(false)
+        // this paramter will make your HUAWEI phone works great!
+        scannerView.setAspectTolerance(0.5f)
         setContentView(scannerView)
     }
 
