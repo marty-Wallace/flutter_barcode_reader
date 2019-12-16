@@ -17,31 +17,32 @@ class BarcodeScanPlugin(private val registrar: Registrar): MethodCallHandler,
         @JvmStatic
         fun registerWith(registrar: Registrar): Unit {
             val channel = MethodChannel(registrar.messenger(), "com.apptreesoftware.barcode_scan")
+            if (registrar.activity() != null) {
             val plugin = BarcodeScanPlugin(registrar)
             channel.setMethodCallHandler(plugin)
             registrar.addActivityResultListener(plugin)
         }
-    }
+    }}
 
     override fun onMethodCall(call: MethodCall, result: Result): Unit {
         if (call.method == "scan") {
             this.result = result
 
-            val formats = call.argument<String>("formats").toUpperCase()
+            val formats = call.argument<String>("formats")?.toUpperCase() ?: ""
 
             val orientation = if(call.hasArgument("orientation")) {
-                call.argument<String>("orientation").toUpperCase()
+                call.argument<String>("orientation")?.toUpperCase() ?: ""
             }else {
                 "LANDSCAPE"
             }
 
             val widthOffsetRatio = if(call.hasArgument("view_width_offset_ratio")) {
-                call.argument<Double>("view_width_offset_ratio")
+                call.argument<Double>("view_width_offset_ratio") ?: 0.15
             }else {
                 0.15
             }
             val heightOffsetRatio = if(call.hasArgument("view_height_offset_ratio")) {
-                call.argument<Double>("view_height_offset_ratio")
+                call.argument<Double>("view_height_offset_ratio") ?: 0.15
             }else {
                 0.15
             }

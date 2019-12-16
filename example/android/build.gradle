@@ -1,24 +1,22 @@
 buildscript {
-    ext.kotlin_version = '1.3.61'
+    ext.kotlin_version = '1.3.20'
     repositories {
-        jcenter()
-        maven {
-            url "https://maven.google.com"
-        }
         google()
+        jcenter()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.3'
+        classpath 'com.android.tools.build:gradle:3.3.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 allprojects {
     repositories {
+        google()
         jcenter()
         maven {
-            url "https://maven.google.com"
+            url "https://maven.google.com" // Google's Maven repository
         }
     }
 }
@@ -26,6 +24,8 @@ allprojects {
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
     project.evaluationDependsOn(':app')
 }
 

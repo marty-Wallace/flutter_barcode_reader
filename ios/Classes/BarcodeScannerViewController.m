@@ -4,6 +4,7 @@
 
 #import "BarcodeScannerViewController.h"
 #import <MTBBarcodeScanner/MTBBarcodeScanner.h>
+#import "ScannerOverlay.h"
 
 
 @implementation BarcodeScannerViewController {
@@ -25,8 +26,24 @@
                                 options:NSLayoutFormatAlignAllBottom
                                 metrics:nil
                                   views:@{@"previewView": _previewView}]];
+  self.scanRect = [[ScannerOverlay alloc] initWithFrame:self.view.bounds];
+  self.scanRect.translatesAutoresizingMaskIntoConstraints = NO;
+  self.scanRect.backgroundColor = UIColor.clearColor;
+  [self.view addSubview:_scanRect];
+  [self.view addConstraints:[NSLayoutConstraint
+                             constraintsWithVisualFormat:@"V:[scanRect]"
+                             options:NSLayoutFormatAlignAllBottom
+                             metrics:nil
+                             views:@{@"scanRect": _scanRect}]];
+  [self.view addConstraints:[NSLayoutConstraint
+                             constraintsWithVisualFormat:@"H:[scanRect]"
+                             options:NSLayoutFormatAlignAllBottom
+                             metrics:nil
+                             views:@{@"scanRect": _scanRect}]];
+  [_scanRect startAnimating];
     self.scanner = [[MTBBarcodeScanner alloc] initWithPreviewView:_previewView];
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(cancel)];
+  [self updateFlashButton];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -45,6 +62,7 @@
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
+    [self.scanner stopScanning];
     [super viewWillDisappear:animated];
     if ([self isFlashOn]) {
         [self toggleFlash:NO];
@@ -64,6 +82,7 @@
 }
 
 - (void)cancel {
+    [self.delegate barcodeScannerViewController:self didFailWithErrorCode:@"USER_CANCELED"];
     [self dismissViewControllerAnimated:true completion:nil];
 }
 
@@ -90,7 +109,7 @@
 - (BOOL)isFlashOn {
     AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     if (device) {
-        return device.torchMode == AVCaptureFlashModeOn || AVCaptureTorchModeOn;
+        return device.torchMode == AVCaptureFlashModeOn || device.torchMode == AVCaptureTorchModeOn;
     }
     return NO;
 }

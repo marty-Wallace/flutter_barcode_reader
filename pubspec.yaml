@@ -1,14 +1,15 @@
 name: barcode_scan
 description: A flutter plugin for scanning 2D barcodes and QRCodes.
-version: 0.0.4
+version: 1.0.0
 author: Matthew Smith<matthew.smith@apptreesoftware.com>
 homepage: https://github.com/apptreesoftware/flutter_barcode_reader
-environment:
-  sdk: '>=2.0.0 <3.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
+
+environment:
+  sdk: ">=2.0.0-dev.58.0 <3.0.0"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://www.dartlang.org/tools/pub/pubspec
